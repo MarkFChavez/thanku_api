@@ -30,7 +30,7 @@ class User(db.Model):
     json_user = {
       "id": self.id,
       "name": self.name,
-      "email": self.email
+      "username": self.username
     }
 
     return json_user
@@ -72,11 +72,19 @@ def verify_password(username_or_token, password):
 
   return True
 
-@api.route("/api/token")
+@api.route("/api/v1.0/token")
 @auth.login_required
 def get_auth_token():
   token = g.user.generate_auth_token()
   return jsonify({ "token": token.decode("ascii") })
+
+@api.route("/api/v1.0/thank/<int:user_id>", methods=["POST"])
+@auth.login_required
+def thank_user(user_id):
+  user = g.user
+  recipient = User.query.get(user_id)
+
+  return jsonify({ "status": "ok", "user": user.to_json(), "recipient": recipient.to_json() })
 
 if __name__ == "__main__":
   manager.run()
