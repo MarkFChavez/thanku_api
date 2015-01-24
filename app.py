@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, jsonify
 from flask.ext.script import Manager
 from flask.ext.sqlalchemy import SQLAlchemy
 
@@ -20,6 +20,22 @@ class User(db.Model):
 
   def __repr__(self):
     return "<User %r>" % self.name
+
+  def to_json(self):
+    json_user = {
+      "id": self.id,
+      "name": self.name,
+      "email": self.email
+    }
+
+    return json_user
+
+@app.route("/api/v1.0/users")
+def index():
+  return jsonify({ "users": [user.to_json() for user in users()] })
+
+def users():
+  return User.query.all()
 
 if __name__ == "__main__":
   manager.run()
