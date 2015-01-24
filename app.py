@@ -3,6 +3,7 @@ from flask import Flask, jsonify, g, request
 from flask.ext.script import Manager
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.httpauth import HTTPBasicAuth
+from flask.ext.cors import CORS
 from passlib.apps import custom_app_context as pwd_context
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, SignatureExpired, BadSignature
 
@@ -12,6 +13,7 @@ api = Flask(__name__)
 api.config["SECRET_KEY"] = "this is an entry for the awesome app contest"
 api.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(basedir, "data.sqlite")
 api.config["SQLALCHEMY_COMMIT_ON_TEARDOWN"] = True
+cors = CORS(api)
 db = SQLAlchemy(api)
 manager = Manager(api)
 auth = HTTPBasicAuth()
