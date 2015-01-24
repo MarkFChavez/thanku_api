@@ -63,6 +63,26 @@ class User(db.Model):
     user = User.query.get(data["id"])
     return user
 
+class Credit(db.Model):
+  __tablename__ = "credits"
+  id = db.Column(db.Integer, primary_key=True)
+  user_id = db.Column(db.Integer)
+  recipient_id = db.Column(db.Integer)
+  description = db.Column(db.String(255))
+
+  def __repr__(self):
+    return "<Credit %r>" % self.description
+
+  def to_json(self):
+    json_credit = {
+      "id": self.id,
+      "user_id": self.user_id,
+      "recipient_id": self.recipient_id,
+      "description": self.description
+    }
+
+    return json_credit
+
 @auth.verify_password
 def verify_password(username_or_token, password):
   user = User.verify_auth_token(username_or_token)
