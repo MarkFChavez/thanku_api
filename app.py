@@ -4,11 +4,12 @@ from flask.ext.script import Manager
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.httpauth import HTTPBasicAuth
 from passlib.apps import custom_app_context as pwd_context
-from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, SignatureExpired, BadSignature
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 api = Flask(__name__)
+api.config["SECRET_KEY"] = "this is an entry for the awesome app contest"
 api.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(basedir, "data.sqlite")
 api.config["SQLALCHEMY_COMMIT_ON_TEARDOWN"] = True
 db = SQLAlchemy(api)
@@ -46,7 +47,7 @@ class User(db.Model):
 
   @staticmethod
   def verify_auth_token(token):
-    s = Serializer(app.config["SECRET_KEY"])
+    s = Serializer(api.config["SECRET_KEY"])
 
     try:
       data = s.loads(token)
@@ -61,6 +62,7 @@ class User(db.Model):
 @auth.verify_password
 def verify_password(username_or_token, password):
   user = User.verify_auth_token(username_or_token)
+
   if not user:
     user = User.query.filter_by(username = username_or_token).first()
     if not user or not user.verify_password(password):
