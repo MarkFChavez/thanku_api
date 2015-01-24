@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify, g
+from flask import Flask, jsonify, g, request
 from flask.ext.script import Manager
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.httpauth import HTTPBasicAuth
@@ -77,6 +77,14 @@ def verify_password(username_or_token, password):
 def get_auth_token():
   token = g.user.generate_auth_token()
   return jsonify({ "token": token.decode("ascii") })
+
+@api.route("/api/v1.0/signin", methods=["POST"])
+def signin():
+  user = User.query.filter_by(username = request.args["username"]).first()
+  if user.verify_password(request.args["password"]):
+    return jsonify({ "status": "ok" })
+
+  return jsonify({ "status": "error" })
 
 @api.route("/api/v1.0/thank/<int:user_id>", methods=["POST"])
 @auth.login_required
