@@ -21,6 +21,7 @@ class User(db.Model):
   id = db.Column(db.Integer, primary_key=True)
   username = db.Column(db.String(64), unique=True)
   name = db.Column(db.String(128))
+  image_url = db.Column(db.String(255))
   password_hash = db.Column(db.String(128))
 
   def __repr__(self):
@@ -30,7 +31,8 @@ class User(db.Model):
     json_user = {
       "id": self.id,
       "name": self.name,
-      "username": self.username
+      "username": self.username,
+      "image_url": self.image_url
     }
 
     return json_user
@@ -80,11 +82,17 @@ def get_auth_token():
 
 @api.route("/api/v1.0/signin", methods=["POST"])
 def signin():
-  user = User.query.filter_by(username = request.args["username"]).first()
-  if user.verify_password(request.args["password"]):
+  user = User.query.filter_by(username = request.json["username"]).first()
+  if user.verify_password(request.json["password"]):
     return jsonify({ "status": "ok" })
 
   return jsonify({ "status": "error" })
+
+@api.route("/api/v1.0/users", methods=["GET"])
+@auth.login_required
+def get_users():
+  users = User.query.all()
+  return jsonify({ "users": [user.to_json() for user in users] })
 
 @api.route("/api/v1.0/thank/<int:user_id>", methods=["POST"])
 @auth.login_required
