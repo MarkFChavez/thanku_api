@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from flask import Flask, jsonify, g, request
 from flask.ext.script import Manager
 from flask.ext.sqlalchemy import SQLAlchemy
@@ -18,6 +19,25 @@ db = SQLAlchemy(api)
 manager = Manager(api)
 auth = HTTPBasicAuth()
 
+class Credit(db.Model):
+  __tablename__ = "credits"
+  user_id = db.Column(db.Integer, db.ForeignKey("users.id"), primary_key=True)
+  recipient_id = db.Column(db.Integer, db.ForeignKey("users.id"), primary_key=True)
+  timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+  description = db.Column(db.String(255))
+
+  def __repr__(self):
+    return "<Credit %r>" % self.description
+
+  def to_json(self):
+    json_credit = {
+      "user_id": self.user_id,
+      "recipient_id": self.recipient_id,
+      "description": self.description
+    }
+
+    return json_credit
+
 class User(db.Model):
   __tablename__ = "users"
   id = db.Column(db.Integer, primary_key=True)
@@ -25,6 +45,10 @@ class User(db.Model):
   name = db.Column(db.String(128))
   image_url = db.Column(db.String(255))
   password_hash = db.Column(db.String(128))
+
+  thanku_recipients = db.relationship("Credit", foreign_keys=[Credit.user_id], backref = db.backref("user", lazy="joined"), lazy="dynamic", cascade="all, delete-orphan")
+
+  thanku_sources = db.relationship("Credit", foreign_keys=[Credit.recipient_id], backref = db.backref("recipient", lazy="joined"), lazy="dynamic", cascade="all, delete-orphan")
 
   def __repr__(self):
     return "<User %r>" % self.name
@@ -62,26 +86,6 @@ class User(db.Model):
 
     user = User.query.get(data["id"])
     return user
-
-class Credit(db.Model):
-  __tablename__ = "credits"
-  id = db.Column(db.Integer, primary_key=True)
-  user_id = db.Column(db.Integer)
-  recipient_id = db.Column(db.Integer)
-  description = db.Column(db.String(255))
-
-  def __repr__(self):
-    return "<Credit %r>" % self.description
-
-  def to_json(self):
-    json_credit = {
-      "id": self.id,
-      "user_id": self.user_id,
-      "recipient_id": self.recipient_id,
-      "description": self.description
-    }
-
-    return json_credit
 
 @auth.verify_password
 def verify_password(username_or_token, password):
