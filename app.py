@@ -73,6 +73,14 @@ class User(db.Model):
     s = Serializer(api.config["SECRET_KEY"], expires_in = expiration)
     return s.dumps({ "id": self.id })
 
+  def give_credit_to(self, user):
+    if not self.has_given_credit_to(user):
+      c = Credit(user=self, recipient=user)
+      db.session.add(c)
+
+  def has_given_credit_to(self, user):
+    return self.thanku_recipients.filter_by(recipient_id=user.id).first() is not None
+
   @staticmethod
   def verify_auth_token(token):
     s = Serializer(api.config["SECRET_KEY"])
