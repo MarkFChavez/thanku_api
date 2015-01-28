@@ -35,7 +35,7 @@ class Credit(db.Model):
     json_credit = {
       "user": User.query.get(self.user_id).to_json(),
       "recipient": User.query.get(self.recipient_id).to_json(),
-      "description": self.description,
+      "message": self.description,
       "timestamp": self.timestamp,
       "point": self.point
     }
@@ -152,7 +152,7 @@ def thank_user(user_id):
   user = g.user
   recipient = User.query.get(user_id)
 
-  user.give_credit_to(recipient, request.json("point"))
+  user.give_credit_to(recipient, request.json("point"), request.json("description"))
 
   return jsonify({ "status": "ok", "user": user.to_json(), "recipient": recipient.to_json() })
 
