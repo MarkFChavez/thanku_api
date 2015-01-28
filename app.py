@@ -33,9 +33,10 @@ class Credit(db.Model):
 
   def to_json(self):
     json_credit = {
-      "user_id": self.user_id,
-      "recipient_id": self.recipient_id,
+      "user": User.query.get(self.user_id).to_json(),
+      "recipient": User.query.get(self.recipient_id).to_json(),
       "description": self.description,
+      "timestamp": self.timestamp,
       "point": self.point
     }
 
@@ -76,10 +77,10 @@ class User(db.Model):
     s = Serializer(api.config["SECRET_KEY"], expires_in = expiration)
     return s.dumps({ "id": self.id })
 
-  def give_credit_to(self, user, point):
+  def give_credit_to(self, user, point, description):
     # check if the last credit is given on the same day
     # if same day, do not allow it
-    c = Credit(user=self, recipient=user, point=point)
+    c = Credit(user=self, recipient=user, point=point, description=description)
     db.session.add(c)
 
   def has_given_credit_to(self, user):
@@ -154,6 +155,11 @@ def thank_user(user_id):
   user.give_credit_to(recipient, request.json("point"))
 
   return jsonify({ "status": "ok", "user": user.to_json(), "recipient": recipient.to_json() })
+
+@api.route("/api/v1.0/credits", methods=["GET"])
+def get_credits():
+  credits = Credit.query.all()
+  return jsonify({ "status": "ok", "credits": [credit.to_json() for credit in credits] })
 
 if __name__ == "__main__":
   manager.run()
