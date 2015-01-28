@@ -108,6 +108,10 @@ def verify_password(username_or_token, password):
 
   return True
 
+@api.route("/status")
+def display_status():
+  return "<h1> API status: WORKING </h1>"
+
 @api.route("/api/v1.0/token")
 @auth.login_required
 def get_auth_token():
