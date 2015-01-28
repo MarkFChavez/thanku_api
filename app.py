@@ -21,10 +21,12 @@ auth = HTTPBasicAuth()
 
 class Credit(db.Model):
   __tablename__ = "credits"
-  user_id = db.Column(db.Integer, db.ForeignKey("users.id"), primary_key=True)
-  recipient_id = db.Column(db.Integer, db.ForeignKey("users.id"), primary_key=True)
+  id = db.Column(db.Integer, primary_key=True)
+  user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+  recipient_id = db.Column(db.Integer, db.ForeignKey("users.id"))
   timestamp = db.Column(db.DateTime, default=datetime.utcnow)
   description = db.Column(db.String(255))
+  point = db.Column(db.Integer)
 
   def __repr__(self):
     return "<Credit %r>" % self.description
@@ -33,7 +35,8 @@ class Credit(db.Model):
     json_credit = {
       "user_id": self.user_id,
       "recipient_id": self.recipient_id,
-      "description": self.description
+      "description": self.description,
+      "point": self.point
     }
 
     return json_credit
@@ -73,13 +76,23 @@ class User(db.Model):
     s = Serializer(api.config["SECRET_KEY"], expires_in = expiration)
     return s.dumps({ "id": self.id })
 
-  def give_credit_to(self, user):
-    if not self.has_given_credit_to(user):
-      c = Credit(user=self, recipient=user)
-      db.session.add(c)
+  def give_credit_to(self, user, point):
+    # check if the last credit is given on the same day
+    # if same day, do not allow it
+    c = Credit(user=self, recipient=user, point=point)
+    db.session.add(c)
 
   def has_given_credit_to(self, user):
     return self.thanku_recipients.filter_by(recipient_id=user.id).first() is not None
+
+  def total_points(self):
+    new_array = []
+    credits = Credit.query.filter_by(recipient_id=self.id)
+
+    for i in credits:
+      new_array.append(i.point)
+
+    return sum(new_array)
 
   @staticmethod
   def verify_auth_token(token):
@@ -137,6 +150,8 @@ def get_users():
 def thank_user(user_id):
   user = g.user
   recipient = User.query.get(user_id)
+
+  user.give_credit_to(recipient, request.json("point"))
 
   return jsonify({ "status": "ok", "user": user.to_json(), "recipient": recipient.to_json() })
 
